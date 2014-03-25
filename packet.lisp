@@ -247,6 +247,8 @@ SIZE is the total number of bytes this object consumes."
   "Pack an object into the buffer."
   (when (symbolp type)
     (setf type (get-type type)))
+  (unless type
+    (error "Unknown type"))
   (let ((packer (type-packer type)))
     (funcall packer object buffer start)))
 
@@ -254,6 +256,8 @@ SIZE is the total number of bytes this object consumes."
   "Unpack an objcet from the buffer."
   (when (symbolp type)
     (setf type (get-type type)))
+  (unless type
+    (error "Unknown type"))
   (let ((unpacker (type-unpacker type)))
     (funcall unpacker buffer start)))
 
