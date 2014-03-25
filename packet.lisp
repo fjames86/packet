@@ -440,7 +440,8 @@ Set SIZE to set the total type size. This cannot be smaller than the minumum req
 									 (unpack-array length slot-type buffer (+ start offset)))))))
 
 						object)))
-				  size)))
+				  size))
+  name)
 
 (defmacro defpacket (name slots &rest options)
   "Macro to simplify defining the CLOS class and packet type.
@@ -479,8 +480,7 @@ set the packing width and total packet size. All other options are passed to def
 						  `(list ',slot-name ',slot-type))))
 					  slots))
 			  :packing ,(cadr (assoc :packing options))
-			  :size ,(cadr (assoc :size options)))
-     nil))
+			  :size ,(cadr (assoc :size options)))))
 
 
 (defun pack (object type)
