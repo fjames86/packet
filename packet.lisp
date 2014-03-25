@@ -371,24 +371,24 @@ Set SIZE to set the total type size. This cannot be smaller than the minumum req
     (setf packing *default-packing*))
   ;; first need to go through the slots and find the starting offsets for each slot and total packet size
   (let ((real-slots nil)
-	(offset 0))
+		(offset 0))
     (dolist (slot slots)
       (destructuring-bind (slot-name slot-type &rest slot-options) slot
-	(declare (ignore slot-options))
-	(let ((length (if (listp slot-type)
-			  (second slot-type)
-			  1))
-	      (arrayp (listp slot-type))
-	      (slot-type (if (listp slot-type)
-			     (first slot-type)
-			     slot-type)))
+		(declare (ignore slot-options))
+		(let ((length (if (listp slot-type)
+						  (second slot-type)
+						  1))
+			  (arrayp (listp slot-type))
+			  (slot-type (if (listp slot-type)
+							 (first slot-type)
+							 slot-type)))
 
-	  (push (list slot-name slot-type arrayp length offset)
-		real-slots)
-	  
-	  (setf offset 
-		(round-offset (+ offset (* (type-size slot-type) length))
-			      packing)))))
+		  (push (list slot-name slot-type arrayp length offset)
+				real-slots)
+		  
+		  (setf offset 
+				(round-offset (+ offset (* (type-size slot-type) length))
+							  packing)))))
     (cond
       ((not size)
        (setf size offset))
@@ -399,42 +399,48 @@ Set SIZE to set the total type size. This cannot be smaller than the minumum req
     (setf real-slots (nreverse real-slots))
 
     (%define-type name 
-		  (lambda (object buffer start)
-		    (dolist (slot real-slots)
-		      (destructuring-bind (slot-name slot-type arrayp length offset) slot
-			(let ((value (slot-value object slot-name)))
-			  (cond
-			    ((not arrayp)
-			     (pack-type value  slot-type buffer (+ start offset)))
-				((null value)
-			     ;; ignore arrays given as nil, this means an empty array
-			     nil)
-			    ((eq slot-type :string)
-				 ;; special case handling for strings. there must be a better way of doing this!!!
-			     (if (stringp value)
-					 (pack-string value length buffer (+ start offset))
-					 (error "Cannot pack ~S as :string for slot ~S" value slot-name)))
-			    ((<= (length value) length)
-			     (pack-array value slot-type buffer (+ start offset)))
-			    (t (error "Array for slot ~S is too large" slot-name))))))
-		    buffer)
-		(lambda (buffer start)
-		  (let ((object (make-instance name)))
-		    (dolist (slot real-slots)
-		      (destructuring-bind (slot-name slot-type arrayp length offset) slot
-			(cond
-			  ((not arrayp)
-			   (setf (slot-value object slot-name)
-				 (unpack-type slot-type buffer (+ start offset))))
-			  ((eq slot-type :string)
-			   (setf (slot-value object slot-name)
-				 (unpack-string length buffer (+ start offset))))
-			  (t
-			   (setf (slot-value object slot-name)
-				 (unpack-array length slot-type buffer (+ start offset)))))))
+				  (lambda (object buffer start)
+					(block packer
+					  ;; if the object is null then return immediately
+					  (unless object
+						(return-from packer buffer))
+					  ;; iterate over the structure slots
+					  (dolist (slot real-slots)
+						(destructuring-bind (slot-name slot-type arrayp length offset) slot
+						  (let ((value (slot-value object slot-name)))
+							(cond
+							  ((not arrayp)
+							   (pack-type value  slot-type buffer (+ start offset)))
+							  ((null value)
+							   ;; ignore arrays given as nil, this means an empty array
+							   nil)
+							  ((eq slot-type :string)
+							   ;; special case handling for strings. there must be a better way of doing this!!!
+							   (if (stringp value)
+								   (pack-string value length buffer (+ start offset))
+								   (error "Cannot pack ~S as :string for slot ~S" value slot-name)))
+							  ((<= (length value) length)
+							   (pack-array value slot-type buffer (+ start offset)))
+							  (t (error "Array for slot ~S is too large" slot-name))))))
+					  buffer))
+				  (lambda (buffer start)
+					(block unpacker			
+					  (let ((object (make-instance name)))
+						(dolist (slot real-slots)
+						  (destructuring-bind (slot-name slot-type arrayp length offset) slot
+							(cond
+							  ((not arrayp)
+							   (setf (slot-value object slot-name)
+									 (unpack-type slot-type buffer (+ start offset))))
+							  ((eq slot-type :string)
+							   (setf (slot-value object slot-name)
+									 (unpack-string length buffer (+ start offset))))
+							  (t
+							   (setf (slot-value object slot-name)
+									 (unpack-array length slot-type buffer (+ start offset)))))))
 
-		    object))
-		size)))
+						object)))
+				  size)))
 
 (defmacro defpacket (name slots &rest options)
   "Macro to simplify defining the CLOS class and packet type.

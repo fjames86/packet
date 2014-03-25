@@ -51,7 +51,42 @@ struct example_s {
       (assert (string= (example-s-name end) name))))
   t)
 
+;; try sending the packet over udp using usocket
+(defun send-example (num morenums name &key (host "localhost") (port 8000))
+  (let ((buffer (pack-example num morenums name))
+		(socket (usocket:socket-connect host port
+										:protocol :datagram)))	
+	(usocket:socket-send socket buffer (length buffer))))
 
 
-	
-    
+;; -----------------
+
+;; more complicated example showing nested structures
+
+#|
+
+struct base_s {
+  uint32_t a;
+  char b[20];
+};
+
+struct top_s {
+  uint32_t a;
+  struct base_s b[10];
+};
+
+|#
+
+(defconstant +base-width+ 20)
+(defconstant +top-width+ 10)
+
+(defpacket base-s
+  ((a :uint32 :initform 0 :initarg :a)
+   (b (:string +base-width+) :initform "" :initarg :b))
+  (:documentation "Base structure."))
+
+(defpacket top-s
+  ((a :uint32 :initform 0 :initarg :a)
+   (b (base-s +top-width+) :initform nil :initarg :b))
+  (:documentation "Top level structure."))
+
