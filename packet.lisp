@@ -35,7 +35,7 @@
 ;;
 
 ;; alist of type definitions
-(defparameter *type-definitions* (make-hash-table)
+(defvar *type-definitions* (make-hash-table)
   "Global table storing type definitions.")
 
 (defun %define-type (name pack-handler unpack-handler size)
@@ -133,115 +133,137 @@ SIZE is the total number of bytes this object consumes."
 
 ;; ----------------- basic type defintions follow ----------------
 
-(%define-type :uint8 
-	      #'pack-uint8
-	      #'unpack-uint8
-	      1)
+(defmacro define-type (name ((pobject pbuffer pstart) &body pbody) ((ubuffer ustart) &body ubody) size)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (%define-type ',name 
+		   (lambda (,pobject ,pbuffer ,pstart) ,@pbody)
+		   (lambda (,ubuffer ,ustart) ,@ubody)
+		   ,size)))
 
-(%define-type :char 
-	      (lambda (char buffer start)
-		(pack-bytes (list (char-code char)) buffer start))
-	      (lambda (buffer start)
-		(let ((bytes (unpack-bytes buffer start 1)))
-		  (code-char (car bytes))))
-	      1)
+(defmacro define-alias (alias name)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (%define-alias ',alias ',name)))
 
-(%define-type :wchar 
-	      (lambda (char buffer start)
-		(pack-bytes (bytes (char-code char) 2) buffer start))
-	      (lambda (buffer start)
-		(let ((code (unpack-bytes buffer start 2)))
-		  (code-char code)))
-	      2)
+(define-type :uint8 
+  ((uint buffer start) (setf (elt buffer start) uint))
+  ((buffer start) (elt buffer start))
+  1)
 
-(%define-type :uint16
-	      (lambda (uint16 buffer start)
-		(pack-bytes (bytes uint16 2) buffer start))
-	      (lambda (buffer start)
-		(unpack-bytes buffer start 2))
-	      2)
+(define-type :char 
+  ((char buffer start)
+   (pack-bytes (list (char-code char)) buffer start))
+  ((buffer start)
+   (let ((bytes (unpack-bytes buffer start 1)))
+     (code-char (car bytes))))
+  1)
 
-(%define-alias :ushort :uint16)
+(define-type :wchar 
+  ((char buffer start)
+   (pack-bytes (bytes (char-code char) 2) buffer start))
+  ((buffer start)
+   (let ((code (unpack-bytes buffer start 2)))
+     (code-char code)))
+  2)
 
-(%define-type :uint32 
-	      (lambda (uint32 buffer start)
-		(pack-bytes (bytes uint32 4) buffer start))
-	      (lambda (buffer start)
-		(unpack-bytes buffer start 4))
-	      4)
+(define-type :uint16
+  ((uint16 buffer start)
+     (pack-bytes (bytes uint16 2) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 2))
+  2)
 
-(%define-alias :uint :uint32)
+(define-alias :ushort :uint16)
 
-(%define-type :uint64 
-	      (lambda (uint64 buffer start)
-		(pack-bytes (bytes uint64 8) buffer start))
-	      (lambda (buffer start)
-		(unpack-bytes buffer start 8))
-	      8)
+(define-type :uint32 
+  ((uint32 buffer start)
+   (pack-bytes (bytes uint32 4) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 4))
+  4)
 
-(%define-alias :ulong :uint64)
+(define-alias :uint :uint32)
 
-(%define-type :int8 
-	      (lambda (int8 buffer start)
-		(pack-bytes (bytes int8 1) buffer start))
-	      (lambda (buffer start)
-		(unpack-bytes buffer start 1 t))
-	      1)
+(define-type :uint64 
+  ((uint64 buffer start)
+   (pack-bytes (bytes uint64 8) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 8))
+  8)
 
-(%define-alias :schar :int8)
+(define-alias :ulong :uint64)
 
-(%define-type :int16
-	      (lambda (int16 buffer start)
-		(pack-bytes (bytes int16 2) buffer start))
-	      (lambda (buffer start)
-		(unpack-bytes buffer start 2 t))
-	      2)
+(define-type :int8 
+  ((int8 buffer start)
+   (pack-bytes (bytes int8 1) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 1 t))
+  1)
 
-(%define-alias :short :int16)
+(define-alias :schar :int8)
 
-(%define-type :int32 
-	      (lambda (int32 buffer start)
-		(pack-bytes (bytes int32 4) buffer start))
-	      (lambda (buffer start)
-		(unpack-bytes buffer start 4 t))
-	      4)
+(define-type :int16
+  ((int16 buffer start)
+   (pack-bytes (bytes int16 2) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 2 t))
+  2)
 
-(%define-alias :int :int32)
+(define-alias :short :int16)
 
-(%define-type :int64 
-	      (lambda (int64 buffer start)
-		(pack-bytes (bytes int64 8) buffer start))
-	      (lambda (buffer start)
-		(unpack-bytes buffer start 8 t))
-	      8)
+(define-type :int32 
+  ((int32 buffer start)
+   (pack-bytes (bytes int32 4) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 4 t))
+  4)
 
-(%define-alias :long :int64)
+(define-alias :int :int32)
+
+(define-type :int64 
+  ((int64 buffer start)
+   (pack-bytes (bytes int64 8) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 8 t))
+  8)
+
+(define-alias :long :int64)
 
 ;; these requre the ieee-floats package
-(%define-type :float
-	      (lambda (float buffer start)
-		(let ((bytes (bytes (ieee-floats:encode-float32 float))))
-		  (pack-bytes bytes buffer start)))
-	      (lambda (buffer start)
-		(let ((bytes (unpack-bytes buffer start 4)))
-		  (ieee-floats:decode-float32 bytes)))
-	      4)
+(define-type :float
+  ((float buffer start)
+   (let ((bytes (bytes (ieee-floats:encode-float32 float))))
+     (pack-bytes bytes buffer start)))
+  ((buffer start)
+   (let ((bytes (unpack-bytes buffer start 4)))
+     (ieee-floats:decode-float32 bytes)))
+  4)
 
-(%define-type :double
-	      (lambda (double buffer start)
-		(let ((bytes (bytes (ieee-floats:encode-float64 double) 8)))
-		  (pack-bytes bytes buffer start)))
-	      (lambda (buffer start)
-		(let ((bytes (unpack-bytes buffer start 8)))
-		  (ieee-floats:decode-float64 bytes)))
-	      8)
+(define-type :double
+  ((double buffer start)
+   (let ((bytes (bytes (ieee-floats:encode-float64 double) 8)))
+     (pack-bytes bytes buffer start)))
+  ((buffer start)
+   (let ((bytes (unpack-bytes buffer start 8)))
+     (ieee-floats:decode-float64 bytes)))
+  8)
 
-(%define-type :string 
-	      (lambda (string buffer start)
-		(pack-string string (1+ (length string)) buffer start))
-	      (lambda (buffer start)
-		(unpack-string 1 buffer start))
-	      1)
+;; this is a horrible hack. we need to have :string interned as a primitive type so 
+;; that we can compute the size of string-type slots, which are represented as arrays.
+;; i.e. the size of (:string 12) should be 12. 
+;; we should never be calling the pack/unpack handlers though... maybe these should signal an error?
+;; Can this be replaced with an alias????
+(define-type :string 
+  ((string buffer start)
+;;		(pack-string string (1+ (length string)) buffer start))
+   (declare (ignore string buffer start))
+   (error "This should never be called."))
+  ((buffer start)
+   (declare (ignore buffer start))
+   (error "This should never be called."))
+  ;;		(unpack-string 1 buffer start))
+  1)
+
+
 
 (defun pack-type (object type buffer start)
   "Pack an object into the buffer."
@@ -358,10 +380,15 @@ Set SIZE to set the total type size. This cannot be smaller than the minumum req
 		      (destructuring-bind (slot-name slot-type arrayp length offset) slot
 			(let ((value (slot-value object slot-name)))
 			  (cond
+			    ((null value)
+			     ;; ignore nils???
+			     nil)
 			    ((not arrayp)
 			     (pack-type value  slot-type buffer (+ start offset)))
-			    ((stringp value)
-			     (pack-string value length buffer (+ start offset)))
+			    ((eq slot-type :string)
+			     (if (stringp value)
+				 (pack-string value length buffer (+ start offset))
+				 (error "Cannot pack ~S as :string for slot ~S" value slot-name)))
 			    ((<= (length value) length)
 			     (pack-array value slot-type buffer (+ start offset)))
 			    (t (error "Array for slot ~S is too large" slot-name))))))
