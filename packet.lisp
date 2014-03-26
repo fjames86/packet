@@ -262,9 +262,7 @@ SIZE is the total number of bytes this object consumes."
    (pack-type (if bool 1 0) :uint32 buffer start))
   ((buffer start)
    (let ((bool (unpack-type :uint32 buffer start)))
-	 (if (= bool 1)
-		 t
-		 nil)))
+	 (not (= bool 0))))
   4)
 	
 ;; This is a horrible hack. we need to have :string type defined so 
