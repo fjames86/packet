@@ -12,8 +12,8 @@
 (defpackage :packet
   (:use :cl)
   (:export #:defpacket
-	   #:pack
-	   #:unpack))
+		   #:pack
+		   #:unpack))
 
 (in-package :packet)
 
@@ -46,7 +46,7 @@
   "Global table storing type definitions.")
 
 (defun %define-type (name pack-handler unpack-handler size)
-	"Intern a new type definition. 
+  "Intern a new type definition. 
 
 PACK-HANDLER is a function with lambda-list (object buffer start)
 and should encode the object into the buffer starting at offset START.
@@ -56,9 +56,9 @@ and should extract information about the desired object starting at offset START
 should return the object.
 
 SIZE is the total number of bytes this object consumes."
-	(setf (gethash name *type-definitions*)
-		  (list name pack-handler unpack-handler size))
-	nil)
+  (setf (gethash name *type-definitions*)
+		(list name pack-handler unpack-handler size))
+  nil)
 
 (defun get-type (name)
   "Find the type definition."
@@ -87,16 +87,8 @@ SIZE is the total number of bytes this object consumes."
   (let ((type (get-type name)))
 	(%define-type alias (type-packer type) (type-unpacker type) (type-size type))))
 
-(defun pack-uint8 (uint buffer start)
-  "Pack an unsigned byted into the buffer."
-  (setf (elt buffer start) uint))
-
-(defun unpack-uint8 (buffer start)
-  "Extract an unsigned byte from the buffer."
-  (elt buffer start))
-
-(defun bytes (integer &optional (size 4))
-  "Expand an integer into its consituent bytes"
+(defun bytes (integer size)
+  "Expand an INTEGER into its consituent number of SIZE bytes."
   (do ((bytes nil)
        (i 0 (1+ i)))
       ((= i size) (nreverse bytes))
@@ -112,31 +104,31 @@ SIZE is the total number of bytes this object consumes."
   buffer)
 
 (defun merge-bytes (bytes &optional signed)
-  "Convert a list of bytes into an unsigned integer"
+  "Convert a list of bytes into a signed/unsigned integer"
   (do ((i 0 (1+ i))
        (integer 0)
        (bytes bytes (cdr bytes)))
       ((null bytes) 
        (let ((max (expt 256 i)))
-	 (if (and signed (> integer (ash max -1)))
-	     (- integer max)
-	     integer)))
+		 (if (and signed (> integer (ash max -1)))
+			 (- integer max)
+			 integer)))
     (setf integer 
-	  (logior integer 
-		  (ash (car bytes) (* 8 i))))))
+		  (logior integer 
+				  (ash (car bytes) (* 8 i))))))
 
 (defun unpack-bytes (buffer start size &optional signed)
   "Get an integer from the buffer."
   (let ((bytes (loop for i below size collect 
-		    (elt buffer (+ start i)))))
+					(elt buffer (+ start i)))))
     (merge-bytes bytes signed)))
 
 (defun round-offset (offset packing)
   "Round the offset to the nearest packing boundary"
   (let ((i (mod offset packing)))
     (if (zerop i)
-	offset
-	(+ offset (- packing i)))))
+		offset
+		(+ offset (- packing i)))))
 
 ;; ----------------- basic type defintions follow ----------------
 
@@ -149,33 +141,33 @@ SIZE is the total number of bytes this object consumes."
 				   ,size)))
 
 (defmacro define-alias (alias name)
-;;  `(eval-when (:compile-toplevel :load-toplevel :execute)
+  ;;  `(eval-when (:compile-toplevel :load-toplevel :execute)
   `(progn
      (%define-alias ',alias ',name)))
 
 (define-type :uint8 
-  ((uint buffer start) (setf (elt buffer start) uint))
+	((uint buffer start) (setf (elt buffer start) uint))
   ((buffer start) (elt buffer start))
   1)
 
 (define-type :char 
-  ((char buffer start)
-   (pack-bytes (list (char-code char)) buffer start))
+	((char buffer start)
+	 (pack-bytes (list (char-code char)) buffer start))
   ((buffer start)
    (let ((bytes (unpack-bytes buffer start 1)))
      (code-char (car bytes))))
   1)
 
 (define-type :wchar 
-  ((char buffer start)
-   (pack-bytes (bytes (char-code char) 2) buffer start))
+	((char buffer start)
+	 (pack-bytes (bytes (char-code char) 2) buffer start))
   ((buffer start)
    (let ((code (unpack-bytes buffer start 2)))
      (code-char code)))
   2)
 
 (define-type :uint16
-  ((uint16 buffer start)
+	((uint16 buffer start)
      (pack-bytes (bytes uint16 2) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 2))
@@ -184,8 +176,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :ushort :uint16)
 
 (define-type :uint32 
-  ((uint32 buffer start)
-   (pack-bytes (bytes uint32 4) buffer start))
+	((uint32 buffer start)
+	 (pack-bytes (bytes uint32 4) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 4))
   4)
@@ -193,8 +185,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :uint :uint32)
 
 (define-type :uint64 
-  ((uint64 buffer start)
-   (pack-bytes (bytes uint64 8) buffer start))
+	((uint64 buffer start)
+	 (pack-bytes (bytes uint64 8) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 8))
   8)
@@ -202,8 +194,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :ulong :uint64)
 
 (define-type :int8 
-  ((int8 buffer start)
-   (pack-bytes (bytes int8 1) buffer start))
+	((int8 buffer start)
+	 (pack-bytes (bytes int8 1) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 1 t))
   1)
@@ -211,8 +203,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :schar :int8)
 
 (define-type :int16
-  ((int16 buffer start)
-   (pack-bytes (bytes int16 2) buffer start))
+	((int16 buffer start)
+	 (pack-bytes (bytes int16 2) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 2 t))
   2)
@@ -220,8 +212,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :short :int16)
 
 (define-type :int32 
-  ((int32 buffer start)
-   (pack-bytes (bytes int32 4) buffer start))
+	((int32 buffer start)
+	 (pack-bytes (bytes int32 4) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 4 t))
   4)
@@ -229,8 +221,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :int :int32)
 
 (define-type :int64 
-  ((int64 buffer start)
-   (pack-bytes (bytes int64 8) buffer start))
+	((int64 buffer start)
+	 (pack-bytes (bytes int64 8) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 8 t))
   8)
@@ -239,18 +231,18 @@ SIZE is the total number of bytes this object consumes."
 
 ;; these require the ieee-floats package
 (define-type :float
-  ((float buffer start)
-   (let ((bytes (bytes (ieee-floats:encode-float32 float))))
-     (pack-bytes bytes buffer start)))
+	((float buffer start)
+	 (let ((bytes (bytes (ieee-floats:encode-float32 float) 4)))
+	   (pack-bytes bytes buffer start)))
   ((buffer start)
    (let ((bytes (unpack-bytes buffer start 4)))
      (ieee-floats:decode-float32 bytes)))
   4)
 
 (define-type :double
-  ((double buffer start)
-   (let ((bytes (bytes (ieee-floats:encode-float64 double) 8)))
-     (pack-bytes bytes buffer start)))
+	((double buffer start)
+	 (let ((bytes (bytes (ieee-floats:encode-float64 double) 8)))
+	   (pack-bytes bytes buffer start)))
   ((buffer start)
    (let ((bytes (unpack-bytes buffer start 8)))
      (ieee-floats:decode-float64 bytes)))
@@ -258,13 +250,13 @@ SIZE is the total number of bytes this object consumes."
 
 ;; booleans are really just uint32's
 (define-type :bool
-  ((bool buffer start)
-   (pack-type (if bool 1 0) :uint32 buffer start))
+	((bool buffer start)
+	 (pack-type (if bool 1 0) :uint32 buffer start))
   ((buffer start)
    (let ((bool (unpack-type :uint32 buffer start)))
 	 (not (= bool 0))))
   4)
-	
+
 ;; This is a horrible hack. we need to have :string type defined so 
 ;; that we can compute the size of string-type slots, which are represented as arrays.
 ;; i.e. the size of (:string 12) should be 12.
@@ -274,16 +266,9 @@ SIZE is the total number of bytes this object consumes."
 ;; generated by %define-packet-type. There MUST be a better way of doing it!!!
 (define-alias :string :uint8)
 
-#|
-(define-type :string 
-  ((string buffer start)
-   (declare (ignore string buffer start))
-   (error "This should never be called."))
-  ((buffer start)
-   (declare (ignore buffer start))
-   (error "This should never be called."))
-  1)
-|#
+;; it'd be nicer if we could just define :string as a packet type, but this isn't possible.
+;; maybe we need to be able to define array types?
+
 ;; -----------------------------------------------------------
 
 
@@ -307,7 +292,7 @@ SIZE is the total number of bytes this object consumes."
 
 
 ;; ------------------------- arrays ------------------------------------
-  
+
 (defun pack-array (array type buffer start)
   "Pack an array of object into the buffer."
   (let ((size (type-size type)))
@@ -317,35 +302,35 @@ SIZE is the total number of bytes this object consumes."
 (defun unpack-array (length type buffer start)
   "Extract an array of objects from the buffer."
   (let ((array (make-array length))
-	(size (type-size type)))
+		(size (type-size type)))
     (dotimes (i length)
       (setf (elt array i)
-	    (unpack-type type buffer (+ start (* i size)))))
+			(unpack-type type buffer (+ start (* i size)))))
     array))
 
-
+;; define some special functions for handling strings... can this be done better??
 (defun pack-string (string length buffer start)
   "Pack a string into the buffer."
   (let ((array (make-array length)))
     (dotimes (i length)
       (if (< i (length string))
-	  (setf (elt array i) (char-code (char string i)))
-	  (setf (elt array i) 0)))
+		  (setf (elt array i) (char-code (char string i)))
+		  (setf (elt array i) 0)))
     (pack-array array
-		:uint8
-		buffer
-		start)))
+				:uint8
+				buffer
+				start)))
 
 (defun unpack-string (length buffer start)
   "Unpack a string from the buffer."
   (let ((bytes (unpack-array length :uint8 buffer start)))
     (with-output-to-string (s)
       (block extract-string
-	(dotimes (i (length bytes))
-	  (let ((code (elt bytes i)))
-	    (if (zerop code)
-		(return-from extract-string)
-		(princ (code-char code) s))))))))
+		(dotimes (i (length bytes))
+		  (let ((code (elt bytes i)))
+			(if (zerop code)
+				(return-from extract-string)
+				(princ (code-char code) s))))))))
 
 ;; --------------------- packets / structures --------------------------
 
@@ -395,7 +380,7 @@ generated by DEFPACKET to pack/unpack the object."
 	(when (and size (< size offset))
 	  (error "Explicit packet size ~S smaller than minumum packet size ~S."
 			 size offset))
-	  
+	
     ;; we have to reverse them becuase they were pushed on so are in reverse order
     (values (nreverse real-slots)
 			offset
@@ -503,8 +488,8 @@ set the packing width and total packet size. All other options are passed to def
 (defun pack (object type)
   "Make a packet buffer from the initial object."
   (let ((buffer (make-array (type-size type) 
-			    :element-type '(unsigned-byte 8)
-			    :initial-element 0)))
+							:element-type '(unsigned-byte 8)
+							:initial-element 0)))
     (pack-type object type buffer 0)
     buffer))
 
