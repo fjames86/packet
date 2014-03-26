@@ -448,7 +448,8 @@ SLOT-OPTIONS are passed to the defclass slot specifier.
 OPTIONS can contain (:packing PACKING) and (:size SIZE). These are used to 
 set the packing width and total packet size. All other options are passed to defclass."
   (let ((gpacking (gensym "PACKING"))
-		(gsize (gensym "SIZE")))
+		(gsize (gensym "SIZE"))
+		(gslots (gensym "SLOTS")))
 	`(progn
 	   ;; define the CLOS class
 	   (defclass ,name ()
@@ -465,7 +466,7 @@ set the packing width and total packet size. All other options are passed to def
 	   ;; define the new packet type
 	   (let ((,gpacking ,(let ((p (cadr (assoc :packing options))))
 							  (if p p '*default-packing*))))
-		 (multiple-value-bind (slots ,gsize)
+		 (multiple-value-bind (,gslots ,gsize)
 			 (compute-real-slots
 			  (list ,@(mapcar (lambda (slot)
 								(destructuring-bind (slot-name slot-type &rest slot-options) slot
@@ -478,9 +479,9 @@ set the packing width and total packet size. All other options are passed to def
 			  ,(cadr (assoc :size options)))
 		   (%define-type ',name
 						 (lambda (object buffer start)
-						   (pack-object object slots buffer start))
+						   (pack-object object ,gslots buffer start))
 						 (lambda (buffer start)
-						   (unpack-object (make-instance ',name) slots buffer start))
+						   (unpack-object (make-instance ',name) ,gslots buffer start))
 						 ,gsize)))
 	   ',name)))
 
