@@ -17,7 +17,7 @@ Packet comes with some pre-defined intrinsic data types:
 
 Users should define their packet type using:
 
-```Common Lisp
+```
 (defpacket name
   ((slot-name slot-type &rest slot-options)
    ...)
@@ -33,7 +33,7 @@ The slot-options are passed into defclass slot specifier.
 
 Options can include: 
 
-```Common Lisp
+```
 (:packing <integer packing>) ;; sets the packing width for the slots
 (:size <integer size>)       ;; sets the total packet buffer size
 ```
@@ -43,13 +43,13 @@ All other options are passed as options to defclass.
 Usage
 ---------
 Make a packet buffer using:
-```Common Lisp
+```
 (pack object type) 
 ```
 This returns the buffer filled in with information.
 
 Extract an object from a buffer using:
-```Common Lisp
+```
 (unpack buffer type)
 ```
 
@@ -73,7 +73,7 @@ struct people_s {
 ```
 
 We define our packet type using:
-```Common Lisp
+```
 (defconstant +magic-number+ #x1E2B3A4D)
 
 (defpacket person-s
