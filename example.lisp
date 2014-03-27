@@ -65,28 +65,32 @@ struct example_s {
 
 #|
 
-struct base_s {
-  uint32_t a;
-  char b[20];
+#define MAX_NAME 20
+#define MAX_PEOPLE 10
+struct person_s {
+  char name[MAX_NAME];
+  uint32_t age;
 };
 
-struct top_s {
-  uint32_t a;
-  struct base_s b[10];
+struct family_s {
+  char surname[MAX_NAME];
+  uint32_t npeople;
+  struct person_s people[MAX_PEOPLE];
 };
 
 |#
 
-(defconstant +base-width+ 20)
-(defconstant +top-width+ 10)
+(defconstant +max-name+ 20)
+(defconstant +max-people+ 10)
 
-(defpacket base-s
-  ((a :uint32 :initform 0 :initarg :a)
-   (b (:string +base-width+) :initform "" :initarg :b))
-  (:documentation "Base structure."))
+(defpacket person-s
+  ((name (:string +max-name+) :initform "" :initarg :name)
+   (age :uint32 :initform 0 :initarg :age))
+  (:documentation "Person structure."))
 
-(defpacket top-s
-  ((a :uint32 :initform 0 :initarg :a)
-   (b (base-s +top-width+) :initform nil :initarg :b))
-  (:documentation "Top level structure."))
+(defpacket family-s
+  ((surname (:string +max-name+) :initform "" :initarg :surname)
+   (npeople :uint32 :initform 0 :initarg :npeople)
+   (people (person-s +max-people+) :initform nil :initarg :people))
+  (:documentation "Family structure."))
 
