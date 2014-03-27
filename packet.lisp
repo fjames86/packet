@@ -12,8 +12,8 @@
 (defpackage :packet
   (:use :cl)
   (:export #:defpacket
-		   #:pack
-		   #:unpack))
+	   #:pack
+	   #:unpack))
 
 (in-package :packet)
 
@@ -57,7 +57,7 @@ should return the object.
 
 SIZE is the total number of bytes this object consumes."
   (setf (gethash name *type-definitions*)
-		(list name pack-handler unpack-handler size))
+	(list name pack-handler unpack-handler size))
   nil)
 
 (defun get-type (name)
@@ -85,7 +85,7 @@ SIZE is the total number of bytes this object consumes."
 (defun %define-alias (alias name)
   "Define an alias for a type. Allows refering to the same type by a different name."
   (let ((type (get-type name)))
-	(%define-type alias (type-packer type) (type-unpacker type) (type-size type))))
+    (%define-type alias (type-packer type) (type-unpacker type) (type-size type))))
 
 (defun bytes (integer size)
   "Expand an INTEGER into its consituent number of SIZE bytes."
@@ -110,64 +110,62 @@ SIZE is the total number of bytes this object consumes."
        (bytes bytes (cdr bytes)))
       ((null bytes) 
        (let ((max (expt 256 i)))
-		 (if (and signed (> integer (ash max -1)))
-			 (- integer max)
-			 integer)))
+	 (if (and signed (> integer (ash max -1)))
+	     (- integer max)
+	     integer)))
     (setf integer 
-		  (logior integer 
-				  (ash (car bytes) (* 8 i))))))
+	  (logior integer 
+		  (ash (car bytes) (* 8 i))))))
 
 (defun unpack-bytes (buffer start size &optional signed)
   "Get an integer from the buffer."
   (let ((bytes (loop for i below size collect 
-					(elt buffer (+ start i)))))
+		    (elt buffer (+ start i)))))
     (merge-bytes bytes signed)))
 
 (defun round-offset (offset packing)
   "Round the offset to the nearest packing boundary"
   (let ((i (mod offset packing)))
     (if (zerop i)
-		offset
-		(+ offset (- packing i)))))
+	offset
+	(+ offset (- packing i)))))
 
 ;; ----------------- basic type defintions follow ----------------
 
 (defmacro define-type (name ((pobject pbuffer pstart) &body pbody) ((ubuffer ustart) &body ubody) size)
-  ;;`(eval-when (:compile-toplevel :load-toplevel :execute)
   `(progn
      (%define-type ',name 
-				   (lambda (,pobject ,pbuffer ,pstart) ,@pbody)
-				   (lambda (,ubuffer ,ustart) ,@ubody)
-				   ,size)))
+		   (lambda (,pobject ,pbuffer ,pstart) ,@pbody)
+		   (lambda (,ubuffer ,ustart) ,@ubody)
+		   ,size)))
 
 (defmacro define-alias (alias name)
-  ;;  `(eval-when (:compile-toplevel :load-toplevel :execute)
   `(progn
      (%define-alias ',alias ',name)))
 
 (define-type :uint8 
-	((uint buffer start) (setf (elt buffer start) uint))
+    ((uint buffer start) (setf (elt buffer start) uint))
   ((buffer start) (elt buffer start))
   1)
 
 (define-type :char 
-	((char buffer start)
-	 (pack-bytes (list (char-code char)) buffer start))
+    ((char buffer start)
+     (pack-bytes (list (char-code char)) buffer start))
   ((buffer start)
    (let ((bytes (unpack-bytes buffer start 1)))
      (code-char (car bytes))))
   1)
 
 (define-type :wchar 
-	((char buffer start)
-	 (pack-bytes (bytes (char-code char) 2) buffer start))
+    ((char buffer start)
+     (pack-bytes (bytes (char-code char) 2) buffer start))
   ((buffer start)
    (let ((code (unpack-bytes buffer start 2)))
      (code-char code)))
   2)
 
 (define-type :uint16
-	((uint16 buffer start)
+    ((uint16 buffer start)
      (pack-bytes (bytes uint16 2) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 2))
@@ -176,8 +174,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :ushort :uint16)
 
 (define-type :uint32 
-	((uint32 buffer start)
-	 (pack-bytes (bytes uint32 4) buffer start))
+    ((uint32 buffer start)
+     (pack-bytes (bytes uint32 4) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 4))
   4)
@@ -185,8 +183,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :uint :uint32)
 
 (define-type :uint64 
-	((uint64 buffer start)
-	 (pack-bytes (bytes uint64 8) buffer start))
+    ((uint64 buffer start)
+     (pack-bytes (bytes uint64 8) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 8))
   8)
@@ -194,8 +192,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :ulong :uint64)
 
 (define-type :int8 
-	((int8 buffer start)
-	 (pack-bytes (bytes int8 1) buffer start))
+    ((int8 buffer start)
+     (pack-bytes (bytes int8 1) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 1 t))
   1)
@@ -203,8 +201,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :schar :int8)
 
 (define-type :int16
-	((int16 buffer start)
-	 (pack-bytes (bytes int16 2) buffer start))
+    ((int16 buffer start)
+     (pack-bytes (bytes int16 2) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 2 t))
   2)
@@ -212,8 +210,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :short :int16)
 
 (define-type :int32 
-	((int32 buffer start)
-	 (pack-bytes (bytes int32 4) buffer start))
+    ((int32 buffer start)
+     (pack-bytes (bytes int32 4) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 4 t))
   4)
@@ -221,8 +219,8 @@ SIZE is the total number of bytes this object consumes."
 (define-alias :int :int32)
 
 (define-type :int64 
-	((int64 buffer start)
-	 (pack-bytes (bytes int64 8) buffer start))
+    ((int64 buffer start)
+     (pack-bytes (bytes int64 8) buffer start))
   ((buffer start)
    (unpack-bytes buffer start 8 t))
   8)
@@ -231,18 +229,18 @@ SIZE is the total number of bytes this object consumes."
 
 ;; these require the ieee-floats package
 (define-type :float
-	((float buffer start)
-	 (let ((bytes (bytes (ieee-floats:encode-float32 float) 4)))
-	   (pack-bytes bytes buffer start)))
+    ((float buffer start)
+     (let ((bytes (bytes (ieee-floats:encode-float32 float) 4)))
+       (pack-bytes bytes buffer start)))
   ((buffer start)
    (let ((bytes (unpack-bytes buffer start 4)))
      (ieee-floats:decode-float32 bytes)))
   4)
 
 (define-type :double
-	((double buffer start)
-	 (let ((bytes (bytes (ieee-floats:encode-float64 double) 8)))
-	   (pack-bytes bytes buffer start)))
+    ((double buffer start)
+     (let ((bytes (bytes (ieee-floats:encode-float64 double) 8)))
+       (pack-bytes bytes buffer start)))
   ((buffer start)
    (let ((bytes (unpack-bytes buffer start 8)))
      (ieee-floats:decode-float64 bytes)))
@@ -250,11 +248,11 @@ SIZE is the total number of bytes this object consumes."
 
 ;; booleans are really just uint32's
 (define-type :bool
-	((bool buffer start)
-	 (pack-type (if bool 1 0) :uint32 buffer start))
+    ((bool buffer start)
+     (pack-type (if bool 1 0) :uint32 buffer start))
   ((buffer start)
    (let ((bool (unpack-type :uint32 buffer start)))
-	 (not (= bool 0))))
+     (not (= bool 0))))
   4)
 
 ;; This is a horrible hack. we need to have :string type defined so 
@@ -302,10 +300,10 @@ SIZE is the total number of bytes this object consumes."
 (defun unpack-array (length type buffer start)
   "Extract an array of objects from the buffer."
   (let ((array (make-array length))
-		(size (type-size type)))
+	(size (type-size type)))
     (dotimes (i length)
       (setf (elt array i)
-			(unpack-type type buffer (+ start (* i size)))))
+	    (unpack-type type buffer (+ start (* i size)))))
     array))
 
 ;; define some special functions for handling strings... can this be done better??
@@ -314,23 +312,23 @@ SIZE is the total number of bytes this object consumes."
   (let ((array (make-array length)))
     (dotimes (i length)
       (if (< i (length string))
-		  (setf (elt array i) (char-code (char string i)))
-		  (setf (elt array i) 0)))
+	  (setf (elt array i) (char-code (char string i)))
+	  (setf (elt array i) 0)))
     (pack-array array
-				:uint8
-				buffer
-				start)))
+		:uint8
+		buffer
+		start)))
 
 (defun unpack-string (length buffer start)
   "Unpack a string from the buffer."
   (let ((bytes (unpack-array length :uint8 buffer start)))
     (with-output-to-string (s)
       (block extract-string
-		(dotimes (i (length bytes))
-		  (let ((code (elt bytes i)))
-			(if (zerop code)
-				(return-from extract-string)
-				(princ (code-char code) s))))))))
+	(dotimes (i (length bytes))
+	  (let ((code (elt bytes i)))
+	    (if (zerop code)
+		(return-from extract-string)
+		(princ (code-char code) s))))))))
 
 ;; --------------------- packets / structures --------------------------
 
@@ -342,49 +340,48 @@ SIZE is the total number of bytes this object consumes."
   "Compute the offsets of each slot. We use this information in the closures
 generated by DEFPACKET to pack/unpack the object."
   (let ((real-slots nil)
-		(offset 0))
+	(offset 0))
     (dolist (slot slots)
       (destructuring-bind (slot-name slot-type &rest slot-options) slot
-		(declare (ignore slot-options))
-		(let ((length (if (listp slot-type)
-						  (second slot-type)
-						  1))
-			  (arrayp (listp slot-type))
-			  (slot-type (if (listp slot-type)
-							 (first slot-type)
-							 slot-type)))
+	(declare (ignore slot-options))
+	(let ((length (if (listp slot-type)
+			  (second slot-type)
+			  1))
+	      (arrayp (listp slot-type))
+	      (slot-type (if (listp slot-type)
+			     (first slot-type)
+			     slot-type)))
 
-		  ;; check it is a real type
-		  (unless (get-type slot-type)
-			(error "Slot type ~S not found." slot-type))
+	  ;; check it is a real type
+	  (unless (get-type slot-type)
+	    (error "Packet type ~S not found." slot-type))
 
-		  ;; check it it's an array that an integer length was provided
-		  (when (and arrayp (not (integerp length)))
-			(error "Array lenth ~S not an integer." length))
-		  
-		  ;; check it's not a string without length
-		  (when (and (eq slot-type :string) (not arrayp))
-			(error "Strings must be given an explicit length."))
+	  ;; check it it's an array that an integer length was provided
+	  (when (and arrayp (not (integerp length)))
+	    (error "Array length ~S not an integer." length))
+	  
+	  ;; check it's not a string without length
+	  (when (and (eq slot-type :string) (not arrayp))
+	    (error "Strings must be given an explicit length."))
 
-		  ;; all ok, push the slot info onto the list
-		  (push (list slot-name slot-type arrayp length offset)
-				real-slots)
+	  ;; all ok, push the slot info onto the list
+	  (push (list slot-name slot-type arrayp length offset)
+		real-slots)
 
-		  ;; compute the offset of the next slot
-		  (let ((type-size (type-size slot-type)))
-			(setf offset 
-				  (round-offset (+ offset (* type-size length))
-								packing))))))
+	  ;; compute the offset of the next slot
+	  (let ((type-size (type-size slot-type)))
+	    (setf offset 
+		  (round-offset (+ offset (* type-size length))
+				packing))))))
 
-	;; check the size, if given
-	(when (and size (< size offset))
-	  (error "Explicit packet size ~S smaller than minumum packet size ~S."
-			 size offset))
-	
+    ;; check the size, if given
+    (when (and size (< size offset))
+      (error "Explicit packet size ~S smaller than minumum packet size ~S."
+	     size offset))
+    
     ;; we have to reverse them becuase they were pushed on so are in reverse order
     (values (nreverse real-slots)
-			offset
-			(if size size offset))))
+	    (if size size offset))))
 
 ;; we define some functions to pack/unpack CLOS objects.
 ;; It is probably possible to convert this to a generic function and have
@@ -393,43 +390,43 @@ generated by DEFPACKET to pack/unpack the object."
 (defun pack-object (object slots buffer start)
   "Pack an OBJECT specified by SLOTS into the BUFFER starting at offset START."
   (unless object
-	(return-from pack-object buffer))
+    (return-from pack-object buffer))
   
   ;; iterate over the structure slots
   (dolist (slot slots)
-	(destructuring-bind (slot-name slot-type arrayp length offset) slot
-	  (let ((value (slot-value object slot-name)))
-		(cond
-		  ((not arrayp)
-		   (pack-type value slot-type buffer (+ start offset)))
-		  ((null value)
-		   ;; ignore arrays given as nil, this means an empty array
-		   nil)
-		  ((eq slot-type :string)
-		   ;; special case handling for strings. there must be a better way of doing this!!!
-		   (if (stringp value)
-			   (pack-string value length buffer (+ start offset))
-			   (error "Cannot pack ~S as :string for slot ~S" value slot-name)))
-		  ((> (length value) length)
-		   (error "Array for slot ~S is too large" slot-name))
-		  (t 
-		   (pack-array value slot-type buffer (+ start offset)))))))
+    (destructuring-bind (slot-name slot-type arrayp length offset) slot
+      (let ((value (slot-value object slot-name)))
+	(cond
+	  ((not arrayp)
+	   (pack-type value slot-type buffer (+ start offset)))
+	  ((null value)
+	   ;; ignore arrays given as nil, this means an empty array
+	   nil)
+	  ((eq slot-type :string)
+	   ;; special case handling for strings. there must be a better way of doing this!!!
+	   (if (stringp value)
+	       (pack-string value length buffer (+ start offset))
+	       (error "Cannot pack ~S as :string for slot ~S" value slot-name)))
+	  ((> (length value) length)
+	   (error "Array for slot ~S is too large" slot-name))
+	  (t 
+	   (pack-array value slot-type buffer (+ start offset)))))))
   buffer)
 
 (defun unpack-object (object slots buffer start)
   "Unpack the SLOTS of OBJECT from BUFFER starting at offset START."
   (dolist (slot slots)
-	(destructuring-bind (slot-name slot-type arrayp length offset) slot
-	  (cond
-		((not arrayp)
-		 (setf (slot-value object slot-name)
-			   (unpack-type slot-type buffer (+ start offset))))
-		((eq slot-type :string)
-		 (setf (slot-value object slot-name)
-			   (unpack-string length buffer (+ start offset))))
-		(t
-		 (setf (slot-value object slot-name)
-			   (unpack-array length slot-type buffer (+ start offset)))))))
+    (destructuring-bind (slot-name slot-type arrayp length offset) slot
+      (cond
+	((not arrayp)
+	 (setf (slot-value object slot-name)
+	       (unpack-type slot-type buffer (+ start offset))))
+	((eq slot-type :string)
+	 (setf (slot-value object slot-name)
+	       (unpack-string length buffer (+ start offset))))
+	(t
+	 (setf (slot-value object slot-name)
+	       (unpack-array length slot-type buffer (+ start offset)))))))
   object)
 
 (defmacro defpacket (name slots &rest options)
@@ -441,56 +438,60 @@ SLOT-NAME should be a symbol used for refering to the CLOS class slot.
 
 SLOT-TYPE should be a symbol refering to a previously defined packet type (forward references 
 are forbidden because we need to know the total packet size at definition time). 
-Use (SLOT-TYPE LENGTH) instead for arrays.
+Use (SLOT-TYPE LENGTH) for arrays.
 
-SLOT-OPTIONS are passed to the defclass slot specifier.
+SLOT-OPTIONS are passed to the corresponding defclass slot specifier.
 
 OPTIONS can contain (:packing PACKING) and (:size SIZE). These are used to 
-set the packing width and total packet size. All other options are passed to defclass."
+set the packing width and total packet size. If not specified PACKING defaults to *DEFAULT-PACKING*,
+SIZE defaults to the total size of packet type. If specified, SIZE may not be less than this, but 
+can be more, to allow for unused space at the end of the structure.
+
+All other options are passed to defclass."
   (let ((gpacking (gensym "PACKING"))
-		(gsize (gensym "SIZE"))
-		(gslots (gensym "SLOTS")))
-	`(progn
-	   ;; define the CLOS class
-	   (defclass ,name ()
-		 ,(mapcar (lambda (slot)
-					(destructuring-bind (slot-name slot-type &rest slot-options) slot
-					  (declare (ignore slot-type))
-					  `(,slot-name ,@slot-options)))
-				  slots)
-		 ,@(mapcan (lambda (option)
-					 (unless (member (car option) '(:packing :size))
-					   (list option)))
-				   options))
-	   
-	   ;; define the new packet type
-	   (let ((,gpacking ,(let ((p (cadr (assoc :packing options))))
-							  (if p p '*default-packing*))))
-		 (multiple-value-bind (,gslots ,gsize)
-			 (compute-real-slots
-			  (list ,@(mapcar (lambda (slot)
-								(destructuring-bind (slot-name slot-type &rest slot-options) slot
-								  (declare (ignore slot-options))
-								  (if (listp slot-type)
-									  `(list ',slot-name (list ',(car slot-type) ,(cadr slot-type)))
-									  `(list ',slot-name ',slot-type))))
-							  slots))
-			  ,gpacking
-			  ,(cadr (assoc :size options)))
-		   (%define-type ',name
-						 (lambda (object buffer start)
-						   (pack-object object ,gslots buffer start))
-						 (lambda (buffer start)
-						   (unpack-object (make-instance ',name) ,gslots buffer start))
-						 ,gsize)))
-	   ',name)))
+	(gsize (gensym "SIZE"))
+	(gslots (gensym "SLOTS")))
+    `(progn
+       ;; define the CLOS class
+       (defclass ,name ()
+	 ,(mapcar (lambda (slot)
+		    (destructuring-bind (slot-name slot-type &rest slot-options) slot
+		      (declare (ignore slot-type))
+		      `(,slot-name ,@slot-options)))
+		  slots)
+	 ,@(mapcan (lambda (option)
+		     (unless (member (car option) '(:packing :size))
+		       (list option)))
+		   options))
+       
+       ;; define the new packet type
+       (let ((,gpacking ,(let ((p (cadr (assoc :packing options))))
+			      (if p p '*default-packing*))))
+	 (multiple-value-bind (,gslots ,gsize)
+	     (compute-real-slots
+	      (list ,@(mapcar (lambda (slot)
+				(destructuring-bind (slot-name slot-type &rest slot-options) slot
+				  (declare (ignore slot-options))
+				  (if (listp slot-type)
+				      `(list ',slot-name (list ',(car slot-type) ,(cadr slot-type)))
+				      `(list ',slot-name ',slot-type))))
+			      slots))
+	      ,gpacking
+	      ,(cadr (assoc :size options)))
+	   (%define-type ',name
+			 (lambda (object buffer start)
+			   (pack-object object ,gslots buffer start))
+			 (lambda (buffer start)
+			   (unpack-object (make-instance ',name) ,gslots buffer start))
+			 ,gsize)))
+       ',name)))
 
 
 (defun pack (object type)
   "Make a packet buffer from the initial object."
   (let ((buffer (make-array (type-size type) 
-							:element-type '(unsigned-byte 8)
-							:initial-element 0)))
+			    :element-type '(unsigned-byte 8)
+			    :initial-element 0)))
     (pack-type object type buffer 0)
     buffer))
 
