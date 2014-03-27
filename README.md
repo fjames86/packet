@@ -10,12 +10,12 @@ Packet type definitions
 ------------------------
 
 Packet comes with some pre-defined intrinsic data types:
-* 8, 16, 32 and 64 byte signed/unsigned integers (:uint8, :uint16, :uint32, :uint64 ...)
-* 32/64-bit floats (encoding/decoding provided by IEEE-FLOATS package) (:float, :double)
-* characters and wide characters (:char, :wchar)
+* 8, 16, 32 and 64 bit signed/unsigned integers (:uint8, :uint16, :uint32, :uint64 ...)
+* 32/64-bit floats (encoding/decoding provided by IEEE-FLOATS package) 
+* characters and wide characters 
 * arrays of primitives, such as strings 
 
-Users should define their packet type using:
+Users define their packet type and associated CLOS class using:
 
 ```
 (defpacket name
@@ -24,12 +24,12 @@ Users should define their packet type using:
   &rest options)
 ```
 
-This defines a defclass for the structure and defines a new packet type.
+This expands to a defclass for the structure and code for defining the new packet type.
 
 The slot-type can either be a symbol referring to a previously defined type (either primitive or a previous defpacket) 
 or it can be a form (slot-type length) which means an array of length of slot-type objects.
 
-The slot-options are passed into defclass slot specifier.
+The slot-options are passed into the defclass slot specifier.
 
 Options can include: 
 
