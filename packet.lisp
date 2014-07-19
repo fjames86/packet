@@ -185,6 +185,14 @@ SIZE is the total number of bytes this object consumes."
 
 (define-alias :ushort :uint16)
 
+(define-type :uint24
+    ((uint24 buffer start)
+	 (declare (integer uint24))
+     (pack-bytes (bytes uint24 3) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 3))
+  3)
+
 (define-type :uint32 
     ((uint32 buffer start)
 	 (declare (integer uint32))
@@ -224,6 +232,16 @@ SIZE is the total number of bytes this object consumes."
   2)
 
 (define-alias :short :int16)
+
+(define-type :int24
+    ((int24 buffer start)
+	 (declare (integer int24))
+     (pack-bytes (bytes int24 3) buffer start))
+  ((buffer start)
+   (unpack-bytes buffer start 3 t))
+  3)
+
+
 
 (define-type :int32 
     ((int32 buffer start)
