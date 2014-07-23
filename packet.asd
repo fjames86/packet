@@ -5,6 +5,8 @@
   :description "Simple binary serialization library."
   :license "BSD"
   :components
-  ((:file "packet"))
+  ((:file "package")
+   (:file "utils" :depends-on ("package"))
+   (:file "packet" :depends-on ("utils")))
   :depends-on (:ieee-floats))
 

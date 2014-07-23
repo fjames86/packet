@@ -7,71 +7,7 @@
 ;; March 2014
 ;;
 
-
-(defpackage :packet
-  (:use :cl)
-  (:export #:defpacket
-		   #:pack
-		   #:unpack
-		   #:type-size
-		   #:list-types
-           #:hd
-           #:subseq*
-           #:pad
-           #:usb8
-           #:usb8*))
-
 (in-package :packet)
-
-(defun subseq* (sequence start &optional len)
-  "Subsequence with length" 
-  (subseq sequence start (when len (+ start len))))
-
-(defun pad (array len)
-  "Pad array with zeros if its too short" 
-  (let* ((l (length array))
-         (arr (make-array (max len l) :initial-element 0 :element-type '(unsigned-byte 8))))
-    (dotimes (i (length arr))
-      (when (< i l)
-        (setf (elt arr i) (elt array i))))
-    arr))
-
-(defun hd (data)
-  "Hexdump output"
-  (let ((lbuff (make-array 16))
-        (len (length data)))
-    (labels ((pline (lbuff count)
-               (dotimes (i count)
-                 (format t " ~2,'0X" (svref lbuff i)))
-               (dotimes (i (- 16 count))
-                 (format t "   "))
-
-               (format t " | ")
-               (dotimes (i count)
-                 (let ((char (code-char (svref lbuff i))))
-                   (format t "~C" 
-                           (if (graphic-char-p char) char #\.))))
-               (terpri)))
-      (do ((pos 0 (+ pos 16)))
-          ((>= pos len))
-        (let ((count (min 16 (- len pos))))
-          (dotimes (i count)
-            (setf (svref lbuff i) (elt data (+ pos i))))
-          (format t "; ~8,'0X:  " pos)
-          (pline lbuff count))))))
-
-
-(defun usb8 (&rest sequences)
-  "Make an (unsigned byte 8) vector from the sequences"
-  (apply #'concatenate '(vector (unsigned-byte 8)) sequences))
-
-(defun usb8* (&rest numbers)
-  "Make an (unsigned-byte 8) vector from the numbers"
-  (make-array (length numbers)
-              :element-type '(unsigned-byte 8)
-              :initial-contents numbers))
-
-
 
 ;; Idea is to operate on a statically defined, fixed size buffer.
 ;; This means we have to store slot offsets and structure definitions ourselves.
