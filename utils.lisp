@@ -113,11 +113,11 @@
                   (mapcar (lambda (enum)
                             (cond 
                               ((symbolp enum)
-                               (prog1 `(list ',enum ,i)
+                               (prog1 `(list ',enum ,i nil)
                                  (incf i)))
                               (t 
-                               (destructuring-bind (n v) enum
-                                 (prog1 `(list ',n ,v)
+                               (destructuring-bind (n v &optional doc) enum
+                                 (prog1 `(list ',n ,v ,doc)
                                    (setf i (1+ v)))))))
                           enums)))))
 
