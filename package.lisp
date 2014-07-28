@@ -22,6 +22,7 @@
            #:defflags
            #:pack-flags
            #:unpack-flags
+           #:flag-p
            #:defenum
            #:enum
            #:enum-p
