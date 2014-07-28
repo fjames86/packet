@@ -94,3 +94,74 @@ struct family_s {
    (people (person-s +max-people+) :initform nil :initarg :people))
   (:documentation "Family structure."))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; usocket UDP example
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defparameter *server-thread* nil)
+(defparameter *server-exiting* nil)
+(defparameter *remote-host* nil)
+(defparameter *remote-port* nil)
+
+;; client
+(defun send-msg (host port msg)  
+  "Send a message to a UDP server"
+  (let ((socket (usocket:socket-connect host port
+										:protocol :datagram
+										:element-type '(unsigned-byte 8))))
+	(unwind-protect
+		 (usocket:socket-send socket msg (length msg))
+	  (usocket:socket-close socket))))
+
+;; server framework
+(defun start-udp-server (handler port &key (timeout 1) (max-buffer-size 4096))
+  "Start example UDP server"
+  (labels ((main-loop ()			 
+			 (setf *server-exiting* nil
+				   *server-thread* (bt:current-thread))
+			 (let ((socket (usocket:socket-connect nil 0
+												   :protocol :datagram
+												   :element-type '(unsigned-byte 8)
+												   :timeout timeout
+												   :local-port port)))
+			   (unwind-protect
+					(do ((buffer (make-array max-buffer-size
+											 :element-type '(unsigned-byte 8))))
+						(*server-exiting*)
+					  (multiple-value-bind (recv n *remote-host* *remote-port*)
+						  (usocket:socket-receive socket buffer max-buffer-size)
+						(declare (ignore recv))
+						(funcall handler (subseq buffer 0 n))))
+				 (usocket:socket-close socket)))))
+	(bt:make-thread #'main-loop :name (format nil "UDP-SERVER ~D" port))))
+
+(defun stop-udp-server (port)
+  "Stop example UDP server"
+  ;; tell the server to exit
+  (setf *server-exiting* t)
+  ;; send a dummy message to clean things up
+  (send-msg "localhost" port (usb8* 0))
+  ;; wait for the thread to exit
+  (bt:join-thread *server-thread*)
+  ;; done
+  nil)
+
+
+;; example server that prints the buffer sent 
+(defconstant +example-port+ 8000)
+(defparameter *example-stream* *error-output*)
+
+(defun example-handler (buffer)
+  (format *example-stream* "HOST: ~A PORT: ~A~%"
+		  (usocket:vector-quad-to-dotted-quad *remote-host*)
+		  *remote-port*)
+  (let ((*standard-output* *example-stream*))
+	(hd buffer))  
+  nil)
+
+(defun start-example-server ()
+  (start-udp-server 'example-handler +example-port+))
+
+(defun stop-example-server ()
+  (stop-udp-server +example-port+))
+ 
