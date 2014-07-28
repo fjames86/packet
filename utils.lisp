@@ -65,14 +65,15 @@
 
 (defmacro defflags (name flags &optional documentation)
   "Macro to define a set of flags"
-  `(defparameter ,name
-     (list ,@(mapcar (lambda (flag)
-                       (destructuring-bind (n v &optional doc) flag
-                         (let ((gv (gensym)))
-                           `(let ((,gv ,v))
-                              (list ',n (ash 1 ,gv) ,gv ,doc)))))
-                     flags))
-     ,documentation))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (defparameter ,name
+       (list ,@(mapcar (lambda (flag)
+                         (destructuring-bind (n v &optional doc) flag
+                           (let ((gv (gensym)))
+                             `(let ((,gv ,v))
+                                (list ',n (ash 1 ,gv) ,gv ,doc)))))
+                       flags))
+     ,documentation)))
 
 (defun pack-flags (flag-names flags)
   "Combine flags"
@@ -108,18 +109,19 @@
          
 (defmacro defenum (name enums)
   "Define a list of enums" 
-  `(defparameter ,name
-     (list ,@(let ((i 0)) 
-                  (mapcar (lambda (enum)
-                            (cond 
-                              ((symbolp enum)
-                               (prog1 `(list ',enum ,i nil)
-                                 (incf i)))
-                              (t 
-                               (destructuring-bind (n v &optional doc) enum
-                                 (prog1 `(list ',n ,v ,doc)
-                                   (setf i (1+ v)))))))
-                          enums)))))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (defparameter ,name
+       (list ,@(let ((i 0)) 
+                    (mapcar (lambda (enum)
+                              (cond 
+                                ((symbolp enum)
+                                 (prog1 `(list ',enum ,i nil)
+                                   (incf i)))
+                                (t 
+                                 (destructuring-bind (n v &optional doc) enum
+                                   (prog1 `(list ',n ,v ,doc)
+                                     (setf i (1+ v)))))))
+                            enums))))))
 
 (defun enum-p (number enum enums)
   (let ((e (assoc enum enums)))
