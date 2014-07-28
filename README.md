@@ -53,6 +53,37 @@ Extract an object from a buffer using:
 (unpack buffer type)
 ```
 
+Utilities 
+-----------
+
+Along with the serialization functions, there are also several other utilities which provide commonly required functionality:
+
+* Bitwise flags:
+```
+(defflags *example-flags*
+  ((:myflag1 0 "My flag1")
+   (:myflag2 1 "My flag2")))
+(pack-flags '(:myflag1 :myflag2) *example-flags*)
+```
+
+* Enums:
+```
+(defenum *example-enum*
+  ((:a 0 "A")
+   (:b 1 "B")))
+(enum :a *example-enum*)
+```
+
+* Hexdump output:
+```
+(hd #(1 2 3 4))
+```
+
+Both the flags and enums expand to eval-when forms so that they can be computed at compile time e.g. like:
+```
+(defun test ()
+  (list #.(enum :a *example-enum*)))
+```
 
 Example
 ----------
@@ -104,6 +135,11 @@ We define our packet type using:
 
 See example.lisp for more simple usages.
 
+TODO
+-----
+
+* Unions?
+* Convert pack-object into a generic function 
 
 
 Frank James 
