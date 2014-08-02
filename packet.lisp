@@ -80,6 +80,7 @@ SIZE is the total number of bytes this object consumes."
 (defun %define-alias (alias name)
   "Define an alias for a type. Allows refering to the same type by a different name."
   (let ((type (get-type name)))
+    (unless type (error "Packet type ~S not defined" name))
     (%define-type alias (type-packer type) (type-unpacker type) (type-size type))))
 
 (defun bytes (integer size)

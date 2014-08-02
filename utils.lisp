@@ -23,6 +23,14 @@
         (setf (elt arr i) (elt array i))))
     arr))
 
+(defun pad* (array &optional (width 4))
+  "Pad to a length multiple of WIDTH"
+  (let* ((l (length array))
+	 (m (mod l width)))
+    (if (zerop m)
+	array
+	(pad array (+ l (- width m))))))
+
 (defun hd (data)
   "Hexdump output"
   (let ((lbuff (make-array 16))

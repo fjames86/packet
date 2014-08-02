@@ -17,6 +17,7 @@
            #:hd
            #:subseq*
            #:pad
+	   #:pad*
            #:usb8
            #:usb8*
            #:defflags
