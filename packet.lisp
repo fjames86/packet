@@ -607,3 +607,49 @@ All other options are passed to defclass."
 
 
           
+
+
+
+(defmacro defpacket* (name slots &rest options)
+  "Like DEFPACKET but defines a DEFSTRUCT instead of a DEFCLASS.
+
+Each slot should be of the form (slot-name slot-type &optional initial-value).
+
+Initial value defaults to 0."
+  (let ((gpacking (gensym "PACKING"))
+	(gsize (gensym "SIZE"))
+	(gslots (gensym "SLOTS")))
+    `(progn
+       ;; define the structure
+       (defstruct ,name 
+	 ,@(mapcar (lambda (slot)
+		     (destructuring-bind (slot-name slot-type &optional initial-value) slot 
+		       `(,slot-name ,(if initial-value
+					 initial-value
+					 (cond 
+					   ((listp slot-type) nil)
+					   (t 0))))))
+			 
+		   slots))
+       
+       ;; define the new packet type
+       (let ((,gpacking ,(let ((p (cadr (assoc :packing options))))
+			      (if p p '*default-packing*))))
+	 (multiple-value-bind (,gslots ,gsize)
+	     (compute-real-slots
+	      (list ,@(mapcar (lambda (slot)
+				(destructuring-bind (slot-name slot-type &optional initial-value) slot
+				  (declare (ignore initial-value))
+				  (if (listp slot-type)
+				      `(list ',slot-name (list ',(car slot-type) ,(cadr slot-type)))
+				      `(list ',slot-name ',slot-type))))
+			      slots))
+	      ,gpacking
+	      ,(cadr (assoc :size options)))
+	   (%define-type ',name
+			 (lambda (object buffer start)
+			   (pack-object object ,gslots buffer start))
+			 (lambda (buffer start)
+			   (unpack-object (make-instance ',name) ,gslots buffer start))
+			 ,gsize)))
+       ',name)))

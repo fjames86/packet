@@ -10,6 +10,7 @@
 (defpackage :packet
   (:use :cl)
   (:export #:defpacket
+	   #:defpacket*
 		   #:pack
 		   #:unpack
 		   #:type-size
